@@ -28,7 +28,23 @@ PLAYER_INFO_X = ENEMY_INFO_X
 PLAYER_INFO_Y = ENEMY_INFO_Y+10
 
 PLAYER_INPUT_X = PLAYER_INFO_X
-PLAYER_INPUT_Y = PLAYER_INFO_Y+FIELD_HEIGHT+11
+PLAYER_INPUT_Y = PLAYER_INFO_Y+FIELD_HEIGHT+17
+
+NEXT_CARD_IN_DECK_X = TURN_ORDER_X 
+NEXT_CARD_IN_DECK_Y = PLAYER_INFO_Y+5
+
+class colors:
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    BLUE = '\033[94m'
+    MAGENTA = '\033[95m'
+    CYAN = '\033[96m'
+    WHITE = '\033[97m'
+    RESET = '\033[0m'
+
+def set_color(color_val,text):
+    return color_val + text + colors.RESET
 
 def input_at(text, x, y):
     response = input(f"\033[%d;%dH{text}" % (y, x))
@@ -105,8 +121,6 @@ class Player(Character):
         self.field[y1][x1] = temp_char
 
     def __init__(self, player_name="Player", deck_name="New Deck", deck=None):
-        self.deck_recharge_counter = 0
-        self.mp_recharge_counter = 0  
         self.hand = [] 
         self.mp = MAX_MP
         self.max_mp = MAX_MP
@@ -156,12 +170,12 @@ class Simulator:
 
         if turn_pick == "1":
             print("You're going first")
-            self.turn_order.append([self.player,0])
             self.turn_order.append([self.opponent,1])
-        elif turn_pick == "2":
+            self.turn_order.append([self.player,0])
+        else:
             print("You're going second")
-            self.turn_order.append([self.opponent,1])
             self.turn_order.append([self.player,0])
+            self.turn_order.append([self.opponent,1])
         self.opponent.field[1][0] = self.opponent
         self.player.field[1][1] = self.player
 
@@ -199,6 +213,11 @@ class Simulator:
                 if character in teams[index]:
                     self.turn_order.append([character,index])
         
+        # prevent a character going first back to back
+        if self.current_character == self.turn_order[0][0]:
+            info = self.turn_order.pop()
+            self.turn_order.append([info[0],info[1]])
+        
         return self.turn_order
 
     def input_for_turn(self):
@@ -217,29 +236,43 @@ class Simulator:
             print_at(character[0].name,TURN_ORDER_X,TURN_ORDER_Y+index+3)
         
         # print field info 
-        print_at(f"Enemy HP: {None}/{None}",ENEMY_INFO_X,ENEMY_INFO_Y)
-        print_at(f"Enemy MP: {None}/{None}",ENEMY_INFO_X,ENEMY_INFO_Y+1)
+        print_at(f"Enemy HP: {self.opponent.health}/{self.opponent.max_health}",ENEMY_INFO_X,ENEMY_INFO_Y)
+        print_at(f"Enemy MP: {self.opponent.mp}/{self.opponent.max_mp}",ENEMY_INFO_X,ENEMY_INFO_Y+1)
         for y in range(0,FIELD_HEIGHT):
             for x in range(1,FIELD_WIDTH+1):
                 if self.opponent.field[x-1][y]:
-                    print_at("X",ENEMY_INFO_X+x,ENEMY_INFO_Y+3+y)
+                    if self.current_character == self.opponent.field[x-1][y]:
+                        print_at(set_color(colors.RED,"X"),ENEMY_INFO_X+x,ENEMY_INFO_Y+3+y)
+                    else:
+                        print_at("X",ENEMY_INFO_X+x,ENEMY_INFO_Y+3+y)
                 else:
                     print_at(".",ENEMY_INFO_X+x,ENEMY_INFO_Y+3+y)
         
-        print_at(f"Your HP: {None}/{None}",PLAYER_INFO_X,PLAYER_INFO_Y)
-        print_at(f"Your MP: {None}/{None}",PLAYER_INFO_X,PLAYER_INFO_Y+1)
+        print_at(f"Your HP: {self.player.health}/{self.player.max_health}",PLAYER_INFO_X,PLAYER_INFO_Y)
+        print_at(f"Your MP: {self.player.mp}/{self.player.max_mp}",PLAYER_INFO_X,PLAYER_INFO_Y+1)
         for y in range(0,FIELD_HEIGHT):
             for x in range(1,FIELD_WIDTH+1):
                 if self.player.field[x-1][y]:
-                    print_at("X",PLAYER_INFO_X+x,PLAYER_INFO_Y+3+y)
+                    if self.current_character == self.player.field[x-1][y]:
+                        print_at(set_color(colors.BLUE,"X"),PLAYER_INFO_X+x,PLAYER_INFO_Y+3+y)
+                    else:
+                        print_at("X",PLAYER_INFO_X+x,PLAYER_INFO_Y+3+y)
                 else:
                     print_at(".",PLAYER_INFO_X+x,PLAYER_INFO_Y+3+y)
 
         # print cards in your hand 
         print_at("Your Hand:",PLAYER_INFO_X,PLAYER_INFO_Y+FIELD_HEIGHT+4)
         for index in range(MAX_HAND_SIZE):
-            card_name = self.player.deck.hand[index]["Name"] if self.player.deck.hand[index] else ""
-            print_at(f'{index} - {card_name}',PLAYER_INFO_X,PLAYER_INFO_Y+FIELD_HEIGHT+6+index)
+            card_name = f'{self.player.deck.hand[index]["Name"]} ({self.player.deck.hand[index]["Type"]}) - MP COST: {self.player.deck.hand[index]["MP Cost"]} - Uses Left: {self.player.deck.hand[index]["Usability"]}' if self.player.deck.hand[index] else ""
+            card_description = ""
+            if card_name:
+                card_description = self.player.deck.hand[index]["Effects"]
+            print_at(f'{index} - {card_name}',PLAYER_INFO_X,PLAYER_INFO_Y+FIELD_HEIGHT+6+index*3)
+            print_at(f'{card_description}',PLAYER_INFO_X,PLAYER_INFO_Y+FIELD_HEIGHT+6+index*3+1)
+
+        print_at("Next card from Deck:",NEXT_CARD_IN_DECK_X,NEXT_CARD_IN_DECK_Y)
+        card_name = f'{self.player.deck.in_game_deck[0]["Name"]} ({self.player.deck.in_game_deck[0]["Type"]})' if self.player.deck.in_game_deck[0] else ""
+        print_at(f'{card_name}',NEXT_CARD_IN_DECK_X,NEXT_CARD_IN_DECK_Y+1)
 
     def logic_handler(self,turn_selector):
         # set list of available actions based on character status and 
@@ -249,44 +282,42 @@ class Simulator:
             turn_command_list = [
                 "Use card",
                 "Move to a nearby space",
-                "Recharge 3 MP",
                 "Skip turn"
             ]
-
-            # drawing a card 
-            if len(self.current_character.deck.in_game_deck) > 0:
-                turn_command_list.append("Replace card in hand with one from deck")
         else:
             turn_command_list = [
                 "Use skill",
                 "Use card",
                 "Move to a nearby space",
-                "Recharge 3 MP",
                 "Skip turn"
             ]
 
-        if turn_selector[1] == 1:
+        if turn_selector[1] == 0:
             if len(self.player.deck.in_game_deck) < 0:
                 turn_command_list.append("Recharge 5 cards to deck")
             
+            if self.player.mp < self.player.max_mp:
+                turn_command_list.append("Recharge 3 MP")     
+        
             print_at("Commands",PLAYER_INPUT_X,PLAYER_INPUT_Y+1)
             
             for index, command in enumerate(turn_command_list):
                 print_at(f'{index} - {command}',PLAYER_INPUT_X,PLAYER_INPUT_Y+index+2)
-            choice = input_at("What will you do?",PLAYER_INPUT_X,PLAYER_INPUT_Y+len(turn_command_list)+2)
+            choice = input_at("What will you do?:",PLAYER_INPUT_X,PLAYER_INPUT_Y+len(turn_command_list)+2)
         # # if opponent's turn
-        elif turn_selector[1] == 0:
+        elif turn_selector[1] == 1:
             if len(self.opponent.deck.in_game_deck) < 0:
                 turn_command_list.append("Recharge 5 cards to deck")
+            
+            if self.opponent.mp < self.opponent.max_mp:
+                turn_command_list.append("Recharge 3 MP")     
+        
             input_at("Press Enter",PLAYER_INPUT_X,PLAYER_INPUT_Y)
-
-    
+  
     def main_loop(self):
         self.initialize_game()
         running_game = True
         while running_game:
-            if not self.turn_order:
-                self.turn_order = self.set_turn_order()
             turn_selector = self.turn_order.pop()
             self.current_character = turn_selector[0]
             
@@ -294,6 +325,8 @@ class Simulator:
             self.display()
             
             self.logic_handler(turn_selector)
+            if not self.turn_order:
+                self.turn_order = self.set_turn_order()
 
 if __name__ == "__main__":
 
