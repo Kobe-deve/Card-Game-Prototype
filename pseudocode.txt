@@ -1,0 +1,36 @@
+
+initialize player hand
+initialize opponent hand
+
+dice roll selection
+
+while game is not over
+	if turn order is empty
+		initialize turn order stack
+	pop character from turn order stack
+	if character is on player's party:
+		if character is player's main character:
+			perform input handling to select action
+				- character action
+				- move/swap to another space
+				- hand action 
+				- refill deck
+				- refill MP 
+				- draw a card
+				- skip turn
+		else:
+			perform input handling to select action:
+				- character action
+				- move/swap to another space
+				- hand action 
+				- refill deck
+				- refill MP 
+				- skip turn
+	else:
+		perform opponent action 
+	
+	if opponent deck = 0 or opponent main character's hp = 0
+		game is over 
+	if player deck = 0 or player main character's hp = 0
+		game is over 
+	
