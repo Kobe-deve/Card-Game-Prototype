@@ -1,6 +1,5 @@
 
 from collections import defaultdict
-import copy
 from datetime import datetime
 from io import StringIO
 import json
@@ -12,162 +11,21 @@ import sys
 import time
 import traceback
 
-# game rules
-MAX_HEALTH = 20
-MAX_MP = 20
-MAX_DECK_CARDS = 20
-MAX_HAND_SIZE = 4
+from game_settings import FIELD_HEIGHT, FIELD_WIDTH, MAX_DECK_CARDS, MAX_HAND_SIZE
+from graphics import ENEMY_INFO_X, ENEMY_INFO_Y, NEXT_CARD_IN_DECK_X, NEXT_CARD_IN_DECK_Y, PLAYER_INFO_X, PLAYER_INFO_Y, PLAYER_INPUT_X, PLAYER_INPUT_Y, TURN_ORDER_X, TURN_ORDER_Y, colors, input_at, print_at, set_color
+from player import Player
 
-FIELD_WIDTH = 3
-FIELD_HEIGHT = 2
-
-global card_database
-
-# display information
-TURN_ORDER_X = 50
-TURN_ORDER_Y = 3
-
-ENEMY_INFO_X = 0
-ENEMY_INFO_Y = TURN_ORDER_Y 
-
-PLAYER_INFO_X = ENEMY_INFO_X
-PLAYER_INFO_Y = ENEMY_INFO_Y+10
-
-PLAYER_INPUT_X = PLAYER_INFO_X
-PLAYER_INPUT_Y = PLAYER_INFO_Y+FIELD_HEIGHT+17
-
-NEXT_CARD_IN_DECK_X = TURN_ORDER_X 
-NEXT_CARD_IN_DECK_Y = PLAYER_INFO_Y+5
-
-# display functions
-class colors:
-    RED = '\033[91m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[94m'
-    MAGENTA = '\033[95m'
-    CYAN = '\033[96m'
-    WHITE = '\033[97m'
-    RESET = '\033[0m'
-
-def set_color(color_val,text):
-    return color_val + text + colors.RESET
-
-def input_at(text, x, y):
-    response = input(f"\033[%d;%dH{text}" % (y, x))
-    return response
-
-def print_at(text, x, y):
-    print(f"\033[%d;%dH{text}" % (y, x))
-
-# class for handling decks 
-class Deck:
-    def __init__(self,name="New Deck",deck_list=[],num_cards=0):
-        self.name = name
-        self.num_cards = num_cards
-        self.card_list = deck_list
-        self.limbo = []
-        self.in_game_deck = []
-        self.hand = []
-    
-    # initialize game hand
-    def get_hand(self):
-        self.limbo = []
-        self.in_game_deck = copy.deepcopy(self.card_list)
-        random.shuffle(self.in_game_deck)
-        self.hand = []
-        for _ in range(MAX_HAND_SIZE):
-            self.hand.append(self.card_list.pop())
-
-    def save_deck(self):
-        pass
-
-    def load_deck(self):
-        pass
-    
-    def __str__(self):
-        deck_string = ""
-        deck_string += f"{self.name}\n"
-        deck_string += f'NUM_CARDS: {self.num_cards}\n'
-        deck_string += f'DECK LIST:\n'
-        for card in self.card_list:
-            deck_string += f'{card}\n'
-        deck_string += '\n'
-        deck_string += f'IN_GAME DECK LIST:\n'
-        for card in self.in_game_deck:
-            deck_string += f'{card}\n'
-        deck_string += '\n'
-        deck_string += f'IN_GAME HAND:\n'
-        for card in self.hand:
-            deck_string += f'{card}\n'
-        deck_string += f'IN_GAME LIMBO:\n'        
-        for card in self.limbo:
-            deck_string += f'{card}\n'
-
-        return deck_string
-    
-# class for characters in battle
-class Character:
-    def __init__(self,type,name="NO NAME"):
-        self.char_type = None
-        self.name = name
-        if type == 0:
-            self.char_type = "Player"
-            self.health = MAX_HEALTH
-            self.max_health = MAX_HEALTH
-            self.mp = MAX_MP
-            self.max_mp = MAX_MP
-            self.speed = 1
-        elif type == 1:
-            self.char_type = "Demon"
-            self.health = 5
-            self.max_health = 5
-            self.mp = 5
-            self.max_mp = 5
-            self.speed = 2
-
-'''
-    hand - current hand of the player
-    health/max_health - current health of the player's main character
-    mp/max_mp - current mp of the player's party
-    field - position of party members for the player's party
-    deck - the deck the player is using 
-'''
-class Player(Character):
-
-    # player field operations
-    def add_character_to_field(self,character,x,y):
-        self.field[y][x] = character
-
-    def remove_from_field(self,x,y):
-        self.field[y][x] = None 
-
-    def swap_on_field(self,x1,y1,x2,y2):
-        temp_char = copy.deepcopy(self.field[y2][x2])
-        self.field[y2][x2] = self.field[y1][x1]
-        self.field[y1][x1] = temp_char
-
-    def __init__(self, player_name="Player", deck_name="New Deck", deck=None):
-        self.hand = [] 
-        self.mp = MAX_MP
-        self.max_mp = MAX_MP
-        self.field = [[None for _ in range(FIELD_HEIGHT)] for _ in range(FIELD_WIDTH)]
-        
-        if not deck:
-            self.deck = Deck(deck_name)
-        else:
-            self.deck = Deck(deck_name,deck)
-        
-        super().__init__(0,player_name)
-    
-    # get all party members on the player's side
-    def get_party_members(self):
-        pass
-
-    def __str__(self):
-        return ""
-        pass
-
+card_dict_keys = [
+    "Type",	
+    "Name",	
+    "Effects",	
+    "MP Cost",	
+    "Usability",	
+    "Strength",	
+    "Num Targets",	
+    "Playable Copies",	
+    "Rarity"
+]
 
 # class for running the simulator
 class Simulator:
