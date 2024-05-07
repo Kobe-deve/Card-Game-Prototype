@@ -189,19 +189,14 @@ class Simulator:
         all_characters = []
         teams = defaultdict(list)
 
-        # get characters from opponent
-        for y in range(FIELD_HEIGHT):
-            for x in range(FIELD_WIDTH):
-                if self.opponent.field[x][y]:
-                    all_characters.append(self.opponent.field[x][y])
-                    teams[0].append(self.opponent.field[x][y])
-        
-        # get characters from player
-        for y in range(FIELD_HEIGHT):
-            for x in range(FIELD_WIDTH):
-                if self.player.field[x][y]:
-                    all_characters.append(self.player.field[x][y])
-                    teams[1].append(self.player.field[x][y])
+        team_in_game = {0:self.player,1:self.opponent}
+
+        for index in team_in_game:
+            for y in range(FIELD_HEIGHT):
+                for x in range(FIELD_WIDTH):
+                    if team_in_game[index].field[x][y]:
+                        all_characters.append(team_in_game[index].field[x][y])
+                        teams[index].append(team_in_game[index].field[x][y])
         
         from operator import attrgetter
         all_characters = sorted(all_characters, key=attrgetter('speed'))
