@@ -43,4 +43,31 @@ class Player(Character):
         pass
 
     def __str__(self):
-        return ""
+        returned_str = ""
+        returned_str += f"NAME: {self.name}\n"
+        returned_str += f"TYPE: {self.char_type}\n"
+        returned_str += f"HP: {self.health}/{self.max_health}\n"
+        returned_str += f"MP: {self.mp}/{self.max_mp}\n"
+        returned_str += f"SPEED: {self.speed}\n"
+        returned_str += f"FIELD:\n"
+
+        party_members = []
+
+        for y in range(FIELD_HEIGHT):
+            for x in range(FIELD_WIDTH):
+                if self.field[x][y]:
+                    returned_str += "X "
+                    party_members.append(self.field[x][y])
+                else:
+                    returned_str += ". "
+            returned_str += "\n"
+        returned_str += "\n"
+
+        returned_str += "\nPARTY:\n"
+        for character in party_members:
+            if character.char_type != "Player":
+                returned_str += f'{str(character)}\n'
+            else:
+                returned_str += 'PLAYER CHARACTER\n'
+                
+        return returned_str
