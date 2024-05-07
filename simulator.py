@@ -5,6 +5,8 @@ import json
 from os import system
 import random
 import time
+
+# game rules
 MAX_HEALTH = 20
 MAX_MP = 20
 MAX_DECK_CARDS = 20
@@ -14,6 +16,27 @@ FIELD_WIDTH = 3
 FIELD_HEIGHT = 2
 
 global card_database
+
+# display information
+TURN_ORDER_X = 50
+TURN_ORDER_Y = 3
+
+ENEMY_INFO_X = 0
+ENEMY_INFO_Y = TURN_ORDER_Y 
+
+PLAYER_INFO_X = ENEMY_INFO_X
+PLAYER_INFO_Y = ENEMY_INFO_Y+10
+
+PLAYER_INPUT_X = PLAYER_INFO_X
+PLAYER_INPUT_Y = PLAYER_INFO_Y+FIELD_HEIGHT+11
+
+def input_at(text, x, y):
+    response = input(f"\033[%d;%dH{text}" % (y, x))
+    return response
+
+def print_at(text, x, y):
+    print(f"\033[%d;%dH{text}" % (y, x))
+
 
 # class for handling decks 
 class Deck:
@@ -40,7 +63,6 @@ class Deck:
     def load_deck(self):
         pass
     
-
 # class for characters in battle
 class Character:
     def __init__(self,type,name="NO NAME"):
@@ -187,17 +209,6 @@ class Simulator:
 
     def display(self):
         system("cls")
-        def print_at(text, x, y):
-            print(f"\033[%d;%dH{text}" % (y, x))
-
-        TURN_ORDER_X = 50
-        TURN_ORDER_Y = 3
-        
-        ENEMY_INFO_X = 0
-        ENEMY_INFO_Y = TURN_ORDER_Y 
-
-        PLAYER_INFO_X = ENEMY_INFO_X
-        PLAYER_INFO_Y = ENEMY_INFO_Y+10
         
         # print turn order
         print_at(f"Current Turn: {self.current_character.name}",TURN_ORDER_X,TURN_ORDER_Y)
@@ -230,6 +241,46 @@ class Simulator:
             card_name = self.player.deck.hand[index]["Name"] if self.player.deck.hand[index] else ""
             print_at(f'{index} - {card_name}',PLAYER_INFO_X,PLAYER_INFO_Y+FIELD_HEIGHT+6+index)
 
+    def logic_handler(self,turn_selector):
+        # set list of available actions based on character status and 
+        # which character it is (player vs party member)
+        turn_command_list = []
+        if (self.current_character == self.player) or (self.current_character == self.opponent):
+            turn_command_list = [
+                "Use card",
+                "Move to a nearby space",
+                "Recharge 3 MP",
+                "Skip turn"
+            ]
+
+            # drawing a card 
+            if len(self.current_character.deck.in_game_deck) > 0:
+                turn_command_list.append("Replace card in hand with one from deck")
+        else:
+            turn_command_list = [
+                "Use skill",
+                "Use card",
+                "Move to a nearby space",
+                "Recharge 3 MP",
+                "Skip turn"
+            ]
+
+        if turn_selector[1] == 1:
+            if len(self.player.deck.in_game_deck) < 0:
+                turn_command_list.append("Recharge 5 cards to deck")
+            
+            print_at("Commands",PLAYER_INPUT_X,PLAYER_INPUT_Y+1)
+            
+            for index, command in enumerate(turn_command_list):
+                print_at(f'{index} - {command}',PLAYER_INPUT_X,PLAYER_INPUT_Y+index+2)
+            choice = input_at("What will you do?",PLAYER_INPUT_X,PLAYER_INPUT_Y+len(turn_command_list)+2)
+        # # if opponent's turn
+        elif turn_selector[1] == 0:
+            if len(self.opponent.deck.in_game_deck) < 0:
+                turn_command_list.append("Recharge 5 cards to deck")
+            input_at("Press Enter",PLAYER_INPUT_X,PLAYER_INPUT_Y)
+
+    
     def main_loop(self):
         self.initialize_game()
         running_game = True
@@ -242,13 +293,7 @@ class Simulator:
             # print information on screen
             self.display()
             
-            # # if player character 
-            if turn_selector[1] == 1:
-                input("What will you do?")
-            # # if CPU
-            elif turn_selector[1] == 0:
-                input("Press Enter")
-
+            self.logic_handler(turn_selector)
 
 if __name__ == "__main__":
 
