@@ -90,18 +90,20 @@ class Simulator:
             print("You're going second")
             self.turn_order.append([self.player,0])
             self.turn_order.append([self.opponent,1])
-        self.opponent.field[1][0] = self.opponent
+        
+        # player character starting positions
+        self.opponent.field[1][1] = self.opponent
         self.player.field[1][1] = self.player
 
         self.opponent.deck.get_hand()
         self.player.deck.get_hand()
-        self.add_to_game_log(f'GAME START\n')
+        self.add_to_game_log(f'MATCH_INFO\n')
         self.add_to_game_log(f'Player - {str(self.player)}\n')
         self.add_to_game_log(f'Player Deck - {str(self.player.deck)}\n')
         self.add_to_game_log(f'Opponent - {str(self.opponent)}\n')
         self.add_to_game_log(f'Opponent Deck - {str(self.opponent.deck)}\n')
-        
-
+        self.add_to_game_log(f'GAME START\n')
+        self.add_to_game_log(f'\n{self.turn_order[-1][0].name} is going first\n')
         input("Press Enter")
 
     # turn order
@@ -130,10 +132,15 @@ class Simulator:
                     self.turn_order.append([character,index])
         
         # prevent a character going first back to back
-        if self.current_character == self.turn_order[0][0]:
+        if self.current_character == self.turn_order[-1][0]:
             info = self.turn_order.pop()
-            self.turn_order.append([info[0],info[1]])
+            self.turn_order.insert(0,[info[0],info[1]])
         
+        self.add_to_game_log(f'\nNEW TURN ORDER\n')
+        for index in range(len(self.turn_order)-1,-1,-1):
+            self.add_to_game_log(f'{self.turn_order[index][0].name} - {self.turn_order[index][1]}\n')
+        self.add_to_game_log(f'\n')
+
         return self.turn_order
 
     def input_for_turn(self):
@@ -146,23 +153,24 @@ class Simulator:
         system("cls")
         
         # print turn order
+        self.add_to_game_log(f'CURRENT TURN {self.current_character.name}\n')
         print_at(f"Current Turn: {self.current_character.name}",TURN_ORDER_X,TURN_ORDER_Y)
         print_at("Up next",TURN_ORDER_X,TURN_ORDER_Y+2)
-        for index,character in enumerate(self.turn_order):
-            print_at(character[0].name,TURN_ORDER_X,TURN_ORDER_Y+index+3)
+        for index in range(len(self.turn_order)-1,-1,-1):
+            print_at(self.turn_order[index][0].name,TURN_ORDER_X,TURN_ORDER_Y+index+3)
         
         # print field info 
         print_at(f"Enemy HP: {self.opponent.health}/{self.opponent.max_health}",ENEMY_INFO_X,ENEMY_INFO_Y)
         print_at(f"Enemy MP: {self.opponent.mp}/{self.opponent.max_mp}",ENEMY_INFO_X,ENEMY_INFO_Y+1)
-        for y in range(0,FIELD_HEIGHT):
+        for y in range(FIELD_HEIGHT-1,-1,-1):
             for x in range(1,FIELD_WIDTH+1):
                 if self.opponent.field[x-1][y]:
                     if self.current_character == self.opponent.field[x-1][y]:
-                        print_at(set_color(colors.RED,"X"),ENEMY_INFO_X+x,ENEMY_INFO_Y+3+y)
+                        print_at(set_color(colors.RED,"X"),ENEMY_INFO_X+x,ENEMY_INFO_Y+3+FIELD_HEIGHT-y)
                     else:
-                        print_at("X",ENEMY_INFO_X+x,ENEMY_INFO_Y+3+y)
+                        print_at("X",ENEMY_INFO_X+x,ENEMY_INFO_Y+3+FIELD_HEIGHT-y)
                 else:
-                    print_at(".",ENEMY_INFO_X+x,ENEMY_INFO_Y+3+y)
+                    print_at(".",ENEMY_INFO_X+x,ENEMY_INFO_Y+3+FIELD_HEIGHT-y)
         
         print_at(f"Your HP: {self.player.health}/{self.player.max_health}",PLAYER_INFO_X,PLAYER_INFO_Y)
         print_at(f"Your MP: {self.player.mp}/{self.player.max_mp}",PLAYER_INFO_X,PLAYER_INFO_Y+1)
