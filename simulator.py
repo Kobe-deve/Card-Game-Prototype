@@ -7,9 +7,13 @@ import random
 import time
 MAX_HEALTH = 20
 MAX_MP = 20
+MAX_DECK_CARDS = 20
+MAX_HAND_SIZE = 4
 
 FIELD_WIDTH = 3
 FIELD_HEIGHT = 2
+
+global card_database
 
 # class for handling decks 
 class Deck:
@@ -17,7 +21,19 @@ class Deck:
         self.name = name
         self.num_cards = num_cards
         self.card_list = deck_list
+        self.limbo = []
+        self.in_game_deck = []
+        self.hand = []
     
+    # initialize game hand
+    def get_hand(self):
+        self.limbo = []
+        self.in_game_deck = copy.deepcopy(self.card_list)
+        random.shuffle(self.in_game_deck)
+        self.hand = []
+        for _ in range(MAX_HAND_SIZE):
+            self.hand.append(self.card_list.pop())
+
     def save_deck(self):
         pass
 
@@ -79,7 +95,6 @@ class Player(Character):
         else:
             self.deck = Deck(deck_name,deck)
         
-        self.limbo = []
         super().__init__(0,player_name)
     
     # get all party members on the player's side
@@ -90,14 +105,16 @@ class Player(Character):
 class Simulator:
     def __init__(self):
         # initalize the player and opponent
-        self.opponent = Player("Opponent")
-        self.player = Player("You")
+        opp_selected_cards = random.sample(card_database, MAX_DECK_CARDS)
+        self.opponent = Player("Opponent",deck=opp_selected_cards)
+        
+        player_selected_cards = random.sample(card_database, MAX_DECK_CARDS)
+        self.player = Player("You",deck=player_selected_cards)
 
         self.current_character = None
         self.turn_order = []
         self.turns = 0
-        self.conditional = None 
-        pass
+        self.conditionals = []
     
     def initialize_game(self):
         # flipping coin, pick a side
@@ -125,6 +142,9 @@ class Simulator:
             self.turn_order.append([self.player,0])
         self.opponent.field[1][0] = self.opponent
         self.player.field[1][1] = self.player
+
+        self.opponent.deck.get_hand()
+        self.player.deck.get_hand()
         input("Press Enter")
 
     # turn order
@@ -206,6 +226,9 @@ class Simulator:
 
         # print cards in your hand 
         print_at("Your Hand:",PLAYER_INFO_X,PLAYER_INFO_Y+FIELD_HEIGHT+4)
+        for index in range(MAX_HAND_SIZE):
+            card_name = self.player.deck.hand[index]["Name"] if self.player.deck.hand[index] else ""
+            print_at(f'{index} - {card_name}',PLAYER_INFO_X,PLAYER_INFO_Y+FIELD_HEIGHT+6+index)
 
     def main_loop(self):
         self.initialize_game()
@@ -219,7 +242,6 @@ class Simulator:
             # print information on screen
             self.display()
             
-             
             # # if player character 
             if turn_selector[1] == 1:
                 input("What will you do?")
