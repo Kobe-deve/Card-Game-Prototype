@@ -1,10 +1,16 @@
 
 from collections import defaultdict
 import copy
+from datetime import datetime
+from io import StringIO
 import json
 from os import system
+import os
 import random
+import signal
+import sys
 import time
+import traceback
 
 # game rules
 MAX_HEALTH = 20
@@ -33,6 +39,7 @@ PLAYER_INPUT_Y = PLAYER_INFO_Y+FIELD_HEIGHT+17
 NEXT_CARD_IN_DECK_X = TURN_ORDER_X 
 NEXT_CARD_IN_DECK_Y = PLAYER_INFO_Y+5
 
+# display functions
 class colors:
     RED = '\033[91m'
     GREEN = '\033[92m'
@@ -52,7 +59,6 @@ def input_at(text, x, y):
 
 def print_at(text, x, y):
     print(f"\033[%d;%dH{text}" % (y, x))
-
 
 # class for handling decks 
 class Deck:
@@ -78,6 +84,27 @@ class Deck:
 
     def load_deck(self):
         pass
+    
+    def __str__(self):
+        deck_string = ""
+        deck_string += f"{self.name}\n"
+        deck_string += f'NUM_CARDS: {self.num_cards}\n'
+        deck_string += f'DECK LIST:\n'
+        for card in self.card_list:
+            deck_string += f'{card}\n'
+        deck_string += '\n'
+        deck_string += f'IN_GAME DECK LIST:\n'
+        for card in self.in_game_deck:
+            deck_string += f'{card}\n'
+        deck_string += '\n'
+        deck_string += f'IN_GAME HAND:\n'
+        for card in self.hand:
+            deck_string += f'{card}\n'
+        deck_string += f'IN_GAME LIMBO:\n'        
+        for card in self.limbo:
+            deck_string += f'{card}\n'
+
+        return deck_string
     
 # class for characters in battle
 class Character:
@@ -137,8 +164,32 @@ class Player(Character):
     def get_party_members(self):
         pass
 
+    def __str__(self):
+        return ""
+        pass
+
+
 # class for running the simulator
 class Simulator:
+
+    def add_to_game_log(self,message):
+        self.game_log.append(message)
+
+    def save_game_log(self):
+        current_time = datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+        os.makedirs("logs",exist_ok=True)
+        with open(f"logs/{current_time}_log.txt",'w') as log_file:
+            for log in self.game_log:
+                log_file.write(log)
+
+    def signal_handler(self, sig, frame):
+        self.save_game_log()
+        print('Ctrl+C captured, exiting...')
+        sys.exit(0)
+
+    def __str__(self):
+        pass
+
     def __init__(self):
         # initalize the player and opponent
         opp_selected_cards = random.sample(card_database, MAX_DECK_CARDS)
@@ -151,6 +202,11 @@ class Simulator:
         self.turn_order = []
         self.turns = 0
         self.conditionals = []
+
+        self.game_log = []
+        
+        signal.signal(signal.SIGINT, self.signal_handler)
+
     
     def initialize_game(self):
         # flipping coin, pick a side
@@ -181,6 +237,13 @@ class Simulator:
 
         self.opponent.deck.get_hand()
         self.player.deck.get_hand()
+        self.add_to_game_log(f'GAME START\n')
+        self.add_to_game_log(f'Player - {str(self.player)}\n')
+        self.add_to_game_log(f'Player Deck - {str(self.player.deck)}\n')
+        self.add_to_game_log(f'Opponent - {str(self.opponent)}\n')
+        self.add_to_game_log(f'Opponent Deck - {str(self.opponent.deck)}\n')
+        
+
         input("Press Enter")
 
     # turn order
@@ -310,18 +373,27 @@ class Simulator:
             input_at("Press Enter",PLAYER_INPUT_X,PLAYER_INPUT_Y)
   
     def main_loop(self):
-        self.initialize_game()
-        running_game = True
-        while running_game:
-            turn_selector = self.turn_order.pop()
-            self.current_character = turn_selector[0]
-            
-            # print information on screen
-            self.display()
-            
-            self.logic_handler(turn_selector)
-            if not self.turn_order:
-                self.turn_order = self.set_turn_order()
+
+        try:
+            self.initialize_game()
+            running_game = True
+            while running_game:
+                turn_selector = self.turn_order.pop()
+                self.current_character = turn_selector[0]
+                
+                # print information on screen
+                self.display()
+                
+                self.logic_handler(turn_selector)
+                if not self.turn_order:
+                    self.turn_order = self.set_turn_order()
+        except Exception as e:
+            traceback_output = StringIO()
+            traceback.print_exc(file=traceback_output)
+            traceback_string = traceback_output.getvalue()
+            self.add_to_game_log(f'ERROR - {e}\n')
+            self.add_to_game_log(f'TRACEBACK\n{traceback_string}')
+            self.save_game_log()
 
 if __name__ == "__main__":
 
