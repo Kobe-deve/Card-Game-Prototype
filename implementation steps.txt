@@ -1,0 +1,23 @@
+-The following basic actions work 
+    drawing a card to replace card in hand
+    move to a nearby space
+    skip turn 
+    use skill 
+    recharge 5 cards to deck 
+    recharge 3 MP 
+-Other characters in your party can act 
+-Actions for all card types work:
+    weapon
+    offense
+    defense
+    fusion
+    healing
+    item
+    conditional
+    summon
+    death
+    status
+    fusion
+    matrix
+-Basic Opponent AI works
+-games with the basic AI work (this will involve initially balancing cards)

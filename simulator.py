@@ -24,7 +24,9 @@ card_dict_keys = [
     "Strength",	
     "Num Targets",	
     "Playable Copies",	
-    "Rarity"
+    "Rarity",
+    "Subtype",
+    "HP"
 ]
 
 # class for running the simulator
