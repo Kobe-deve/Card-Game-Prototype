@@ -204,6 +204,7 @@ class Simulator:
             print_at(f'{index} - {card_name}',PLAYER_INFO_X,PLAYER_INFO_Y+FIELD_HEIGHT+6+index*3)
             print_at(f'{card_description}',PLAYER_INFO_X,PLAYER_INFO_Y+FIELD_HEIGHT+6+index*3+1)
 
+        # display next card at the top of the deck
         print_at("Next card from Deck:",NEXT_CARD_IN_DECK_X,NEXT_CARD_IN_DECK_Y)
         if len(self.player.deck.in_game_deck) > 1:
             card_name = f'{self.player.deck.in_game_deck[0]["Name"]} ({self.player.deck.in_game_deck[0]["Type"]})' if self.player.deck.in_game_deck[0] else ""
@@ -239,8 +240,8 @@ class Simulator:
             ]
 
         # if the current character party's deck is empty, give option to recharge
-        if (turn_selector[1] == 0 and len(self.player.deck.in_game_deck) < 0) \
-            or (turn_selector[1] == 1 and len(self.opponent.deck.in_game_deck) < 0):
+        if (turn_selector[1] == 0 and len(self.player.deck.in_game_deck) <= 0) \
+            or (turn_selector[1] == 1 and len(self.opponent.deck.in_game_deck) <= 0):
             turn_command_list.append(actions.Recharge_5_cards_to_deck)
 
         # if the current character party's MP is empty, give option to recharge        
@@ -271,6 +272,9 @@ class Simulator:
                     if int(draw_choice) < 4:
                         self.player.deck.draw_card(int(draw_choice))
                         finish_input = True
+                elif turn_command_list[int(choice)] == actions.Recharge_5_cards_to_deck:
+                    self.player.deck.reload_deck()
+                    finish_input = True
                 else:
                     finish_input = True
             

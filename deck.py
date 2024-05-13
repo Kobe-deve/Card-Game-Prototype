@@ -10,6 +10,7 @@ class Deck:
         self.num_cards = len(deck_list)
         self.card_list = deck_list
         self.limbo = []
+        self.discard_pile = [] 
         self.in_game_deck = []
         self.hand = []
     
@@ -23,12 +24,19 @@ class Deck:
             self.hand.append(self.in_game_deck.pop())
 
     def draw_card(self,hand_to_replace):
+        self.discard_pile.append(self.hand[hand_to_replace])
         self.hand[hand_to_replace] = self.in_game_deck.pop(0)
 
     def save_deck(self):
         pass
 
-    def load_deck(self):
+    def reload_deck(self):
+        random_selection = random.sample(self.discard_pile, 5)
+        for value in random_selection:
+            self.discard_pile.remove(value)
+            self.in_game_deck.append(value)
+    
+    def recharge_deck(self):
         pass
     
     def __str__(self):
