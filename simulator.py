@@ -15,26 +15,30 @@ from game_settings import FIELD_HEIGHT, FIELD_WIDTH, MAX_DECK_CARDS, MAX_HAND_SI
 from graphics import ENEMY_INFO_X, ENEMY_INFO_Y, NEXT_CARD_IN_DECK_X, NEXT_CARD_IN_DECK_Y, PLAYER_INFO_X, PLAYER_INFO_Y, PLAYER_INPUT_X, PLAYER_INPUT_Y, TURN_ORDER_X, TURN_ORDER_Y, colors, input_at, print_at, set_color
 from player import Player
 
-card_dict_keys = [
-    "Type",	
-    "Name",	
-    "Effects",	
-    "MP Cost",	
-    "Usability",	
-    "Strength",	
-    "Num Targets",	
-    "Playable Copies",	
-    "Rarity",
-    "Subtype",
-    "HP"
-]
+'''
+    turn order:
+        Each character in the list is represented by the following entry:
+        (character information, number associated with what party they're in)
+'''
+
+class ActionEnum:
+    Use_skill = "Use skill"
+    Use_card = "Use card"
+    Move_to_a_nearby_space = "Move to a nearby space"
+    Skip_turn = "Skip turn"
+    Recharge_5_cards_to_deck = "Recharge 5 cards to deck"
+    Recharge_3_MP = "Recharge 3 MP"
+
+actions = ActionEnum()
 
 # class for running the simulator
 class Simulator:
 
+    # adds to the game log 
     def add_to_game_log(self,message):
         self.game_log.append(message)
 
+    # saves game log to a game log file 
     def save_game_log(self):
         current_time = datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
         os.makedirs("logs",exist_ok=True)
@@ -42,6 +46,7 @@ class Simulator:
             for log in self.game_log:
                 log_file.write(log)
 
+    # helps capture ctrl+c exit to save game log 
     def signal_handler(self, sig, frame):
         self.save_game_log()
         print('Ctrl+C captured, exiting...')
@@ -50,6 +55,7 @@ class Simulator:
     def __str__(self):
         pass
 
+    # constructor 
     def __init__(self):
         # initalize the player and opponent
         opp_selected_cards = random.sample(card_database, MAX_DECK_CARDS)
@@ -67,7 +73,7 @@ class Simulator:
         
         signal.signal(signal.SIGINT, self.signal_handler)
 
-    
+    # initializes a game round
     def initialize_game(self):
         # flipping coin, pick a side
         coin_side = ""
@@ -108,7 +114,7 @@ class Simulator:
         self.add_to_game_log(f'\n{self.turn_order[-1][0].name} is going first\n')
         input("Press Enter")
 
-    # turn order
+    # sets the new turn order when it's empty 
     # {character, party}
     def set_turn_order(self):
         all_characters = []
@@ -151,6 +157,7 @@ class Simulator:
     def input_space():
         pass 
 
+    # displays game information 
     def display(self):
         system("cls")
         
@@ -200,65 +207,84 @@ class Simulator:
         card_name = f'{self.player.deck.in_game_deck[0]["Name"]} ({self.player.deck.in_game_deck[0]["Type"]})' if self.player.deck.in_game_deck[0] else ""
         print_at(f'{card_name}',NEXT_CARD_IN_DECK_X,NEXT_CARD_IN_DECK_Y+1)
 
+    # handles opponent AI 
+    def opponent_ai_select(self,turn_command_list):
+        pass
+
+    # handles input/game logic for each turn 
     def logic_handler(self,turn_selector):
         # set list of available actions based on character status and 
         # which character it is (player vs party member)
         turn_command_list = []
         if (self.current_character == self.player) or (self.current_character == self.opponent):
             turn_command_list = [
-                "Use card",
-                "Move to a nearby space",
-                "Skip turn"
+                actions.Use_card,
+                actions.Move_to_a_nearby_space,
+                actions.Skip_turn
             ]
         else:
             turn_command_list = [
-                "Use skill",
-                "Use card",
-                "Move to a nearby space",
-                "Skip turn"
+                actions.Use_skill,
+                actions.Use_card,
+                actions.Move_to_a_nearby_space,
+                actions.Skip_turn
             ]
 
+        # if the current character party's deck is empty, give option to recharge
+        if (turn_selector[1] == 0 and len(self.player.deck.in_game_deck) < 0) \
+            or (turn_selector[1] == 1 and len(self.opponent.deck.in_game_deck) < 0):
+            turn_command_list.append(actions.Recharge_5_cards_to_deck)
+
+        # if the current character party's MP is empty, give option to recharge        
+        if (turn_selector[1] == 0 and  self.player.mp < self.player.max_mp) \
+            or (turn_selector[1] == 1 and self.opponent.mp < self.opponent.max_mp):
+            turn_command_list.append(actions.Recharge_3_MP)     
+    
         if turn_selector[1] == 0:
-            if len(self.player.deck.in_game_deck) < 0:
-                turn_command_list.append("Recharge 5 cards to deck")
-            
-            if self.player.mp < self.player.max_mp:
-                turn_command_list.append("Recharge 3 MP")     
         
             print_at("Commands",PLAYER_INPUT_X,PLAYER_INPUT_Y+1)
             
             for index, command in enumerate(turn_command_list):
                 print_at(f'{index} - {command}',PLAYER_INPUT_X,PLAYER_INPUT_Y+index+2)
-            choice = input_at("What will you do?:",PLAYER_INPUT_X,PLAYER_INPUT_Y+len(turn_command_list)+2)
+            
+            choice = ""
+            while not choice.isdigit() or (choice.isdigit() and (int(choice) < 0 or int(choice) > len(turn_command_list)-1)):
+                choice = input_at("What will you do?:",PLAYER_INPUT_X,PLAYER_INPUT_Y+len(turn_command_list)+2)
+            self.add_to_game_log(f'PLAYER OPTION - {turn_command_list[int(choice)]}')
         # # if opponent's turn
         elif turn_selector[1] == 1:
-            if len(self.opponent.deck.in_game_deck) < 0:
-                turn_command_list.append("Recharge 5 cards to deck")
-            
-            if self.opponent.mp < self.opponent.max_mp:
-                turn_command_list.append("Recharge 3 MP")     
-        
+
+            opponent_option = self.opponent_ai_select(turn_command_list)
             input_at("Press Enter",PLAYER_INPUT_X,PLAYER_INPUT_Y)
-  
+    
+    # main game loop 
     def main_loop(self):
 
         try:
             self.initialize_game()
             running_game = True
             while running_game:
+                # get current character in turn order stack 
                 turn_selector = self.turn_order.pop()
+
+                # set current character to what was popped from teh stack
                 self.current_character = turn_selector[0]
                 
                 # print information on screen
                 self.display()
                 
+                # let the current character select their actions (sending character, party number)
                 self.logic_handler(turn_selector)
+
+                # if turn order is empty, reset 
                 if not self.turn_order:
                     self.turn_order = self.set_turn_order()
         except Exception as e:
+            system("cls")
             traceback_output = StringIO()
             traceback.print_exc(file=traceback_output)
             traceback_string = traceback_output.getvalue()
+            print(traceback_string)
             self.add_to_game_log(f'ERROR - {e}\n')
             self.add_to_game_log(f'TRACEBACK\n{traceback_string}')
             self.save_game_log()
