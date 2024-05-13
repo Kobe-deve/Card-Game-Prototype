@@ -26,6 +26,7 @@ class ActionEnum:
     Use_card = "Use card"
     Move_to_a_nearby_space = "Move to a nearby space"
     Skip_turn = "Skip turn"
+    Draw_card = "Draw and replace card in hand"
     Recharge_5_cards_to_deck = "Recharge 5 cards to deck"
     Recharge_3_MP = "Recharge 3 MP"
 
@@ -204,8 +205,10 @@ class Simulator:
             print_at(f'{card_description}',PLAYER_INFO_X,PLAYER_INFO_Y+FIELD_HEIGHT+6+index*3+1)
 
         print_at("Next card from Deck:",NEXT_CARD_IN_DECK_X,NEXT_CARD_IN_DECK_Y)
-        card_name = f'{self.player.deck.in_game_deck[0]["Name"]} ({self.player.deck.in_game_deck[0]["Type"]})' if self.player.deck.in_game_deck[0] else ""
+        if len(self.player.deck.in_game_deck) > 1:
+            card_name = f'{self.player.deck.in_game_deck[0]["Name"]} ({self.player.deck.in_game_deck[0]["Type"]})' if self.player.deck.in_game_deck[0] else ""
         print_at(f'{card_name}',NEXT_CARD_IN_DECK_X,NEXT_CARD_IN_DECK_Y+1)
+        print_at(f'Cards in DecK: {len(self.player.deck.in_game_deck)}',NEXT_CARD_IN_DECK_X,NEXT_CARD_IN_DECK_Y+2)
 
     # handles opponent AI 
     def opponent_ai_select(self,turn_command_list):
@@ -222,6 +225,11 @@ class Simulator:
                 actions.Move_to_a_nearby_space,
                 actions.Skip_turn
             ]
+
+            # if deck isn't empty, add option to draw card 
+            if (turn_selector[1] == 0 and len(self.player.deck.in_game_deck) > 0) \
+            or (turn_selector[1] == 1 and len(self.opponent.deck.in_game_deck) > 0):
+                turn_command_list.append(actions.Draw_card)
         else:
             turn_command_list = [
                 actions.Use_skill,
@@ -241,17 +249,32 @@ class Simulator:
             turn_command_list.append(actions.Recharge_3_MP)     
     
         if turn_selector[1] == 0:
-        
-            print_at("Commands",PLAYER_INPUT_X,PLAYER_INPUT_Y+1)
             
-            for index, command in enumerate(turn_command_list):
-                print_at(f'{index} - {command}',PLAYER_INPUT_X,PLAYER_INPUT_Y+index+2)
+            finish_input = False
+
+            while not finish_input:
+                print_at("Commands",PLAYER_INPUT_X,PLAYER_INPUT_Y+1)
+                
+                for index, command in enumerate(turn_command_list):
+                    print_at(f'{index} - {command}',PLAYER_INPUT_X,PLAYER_INPUT_Y+index+2)
+                
+                choice = ""
+                while not choice.isdigit() or (choice.isdigit() and (int(choice) < 0 or int(choice) > len(turn_command_list)-1)):
+                    choice = input_at("What will you do?:",PLAYER_INPUT_X,PLAYER_INPUT_Y+len(turn_command_list)+2)
+                self.add_to_game_log(f'PLAYER OPTION - {turn_command_list[int(choice)]}')
+
+                if turn_command_list[int(choice)] == actions.Draw_card:
+                    draw_choice = ""
+                    while not draw_choice.isdigit() or (draw_choice.isdigit() and (int(draw_choice) < 0 or int(draw_choice) > 5)):
+                        draw_choice = input_at("What card do you want to replace? (0-3, 4 to exit)",PLAYER_INPUT_X,PLAYER_INPUT_Y+len(turn_command_list)+4)                   
+                
+                    if int(draw_choice) < 4:
+                        self.player.deck.draw_card(int(draw_choice))
+                        finish_input = True
+                else:
+                    finish_input = True
             
-            choice = ""
-            while not choice.isdigit() or (choice.isdigit() and (int(choice) < 0 or int(choice) > len(turn_command_list)-1)):
-                choice = input_at("What will you do?:",PLAYER_INPUT_X,PLAYER_INPUT_Y+len(turn_command_list)+2)
-            self.add_to_game_log(f'PLAYER OPTION - {turn_command_list[int(choice)]}')
-        # # if opponent's turn
+        # if opponent's turn
         elif turn_selector[1] == 1:
 
             opponent_option = self.opponent_ai_select(turn_command_list)

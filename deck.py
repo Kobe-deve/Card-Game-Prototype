@@ -20,10 +20,10 @@ class Deck:
         random.shuffle(self.in_game_deck)
         self.hand = []
         for _ in range(MAX_HAND_SIZE):
-            self.hand.append(self.card_list.pop())
+            self.hand.append(self.in_game_deck.pop())
 
     def draw_card(self,hand_to_replace):
-        self.hand[hand_to_replace] = self.player.deck.in_game_deck.pop(0)
+        self.hand[hand_to_replace] = self.in_game_deck.pop(0)
 
     def save_deck(self):
         pass
