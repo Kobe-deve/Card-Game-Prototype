@@ -278,7 +278,7 @@ class Simulator:
                 elif turn_command_list[int(choice)] == actions.Skip_turn:
                     finish_input = True                
                 elif turn_command_list[int(choice)] == actions.Recharge_3_MP:
-                    self.playerrecharge_mp(self)
+                    self.player.recharge_mp(self)
                     finish_input = True                
                 else:
                     finish_input = True
