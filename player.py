@@ -42,6 +42,10 @@ class Player(Character):
     def get_party_members(self):
         pass
 
+    def recharge_mp(self):
+        self.mp += 3
+        self.mp = self.mp % self.max_mp
+
     def __str__(self):
         returned_str = ""
         returned_str += f"NAME: {self.name}\n"

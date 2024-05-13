@@ -1,7 +1,6 @@
 -The following basic actions work 
     move to a nearby space
     use skill 
-    recharge 3 MP 
 -Other characters in your party can act 
 -Actions for all card types work:
     weapon
