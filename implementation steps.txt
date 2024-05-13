@@ -1,6 +1,5 @@
 -The following basic actions work 
     move to a nearby space
-    skip turn 
     use skill 
     recharge 3 MP 
 -Other characters in your party can act 

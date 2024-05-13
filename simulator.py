@@ -275,6 +275,8 @@ class Simulator:
                 elif turn_command_list[int(choice)] == actions.Recharge_5_cards_to_deck:
                     self.player.deck.reload_deck()
                     finish_input = True
+                elif turn_command_list[int(choice)] == actions.Skip_turn:
+                    finish_input = True
                 else:
                     finish_input = True
             
