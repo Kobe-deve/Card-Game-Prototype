@@ -20,10 +20,17 @@ class Player(Character):
     def remove_from_field(self,x,y):
         self.field[y][x] = None 
 
+    def character_in_field(self,character):
+        for y in range(FIELD_HEIGHT):
+            for x in range(FIELD_WIDTH):
+                if self.field[x][y] == character:
+                    return self.field[x][y], x,y
+        return None 
+    
     def swap_on_field(self,x1,y1,x2,y2):
-        temp_char = copy.deepcopy(self.field[y2][x2])
-        self.field[y2][x2] = self.field[y1][x1]
-        self.field[y1][x1] = temp_char
+        temp_char = copy.deepcopy(self.field[x2][y2])
+        self.field[x2][y2] = self.field[x1][y1]
+        self.field[x1][y1] = temp_char
 
     def __init__(self, player_name="Player", deck_name="New Deck", deck=None):
         self.hand = [] 

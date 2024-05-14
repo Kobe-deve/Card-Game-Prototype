@@ -1,5 +1,4 @@
--The following basic actions work 
-    move to a nearby space
+-The following basic actions work for the player 
     use skill 
 -Other characters in your party can act 
 -Actions for all card types work:

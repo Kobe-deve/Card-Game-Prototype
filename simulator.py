@@ -275,6 +275,40 @@ class Simulator:
                 elif turn_command_list[int(choice)] == actions.Recharge_5_cards_to_deck:
                     self.player.deck.reload_deck()
                     finish_input = True
+                elif turn_command_list[int(choice)] == actions.Move_to_a_nearby_space:
+                    direction_choice = ""
+                    
+                    directions = []
+
+                    _, current_x, current_y = self.player.character_in_field(self.current_character)
+                    index = 0
+
+                    options = []
+                    for position in ["Up","Down","Left","Right"]:
+                        if (position == "Left" and current_x == 0) or \
+                           (position == "Right" and current_x == FIELD_WIDTH-1) or \
+                           (position == "Up" and current_y == 0) or \
+                           (position == "Down" and current_y == FIELD_HEIGHT-1):
+                            continue
+                        print_at(f"{index} - {position}",PLAYER_INPUT_X+40,PLAYER_INPUT_Y+index)
+                        options.append(position)
+                        index += 1
+                    print_at("4 - Go Back",PLAYER_INPUT_X+40,PLAYER_INPUT_Y+index+1)
+ 
+                    while not direction_choice.isdigit() or (direction_choice.isdigit() and (int(direction_choice) < 0 and int(direction_choice) > index-1 and int(direction_choice) != 4)):
+                        direction_choice = input_at("What direction do you want to switch places with? (0-3, 4 to exit)",PLAYER_INPUT_X,PLAYER_INPUT_Y+len(turn_command_list)+4)                   
+
+                    option = int(direction_choice)
+                    if option != 4:
+                        if options[option] == "Left":
+                            self.player.swap_on_field(current_x,current_y,current_x-1,current_y)
+                        if options[option] == "Right":
+                            self.player.swap_on_field(current_x,current_y,current_x+1,current_y)
+                        if options[option] == "Up":
+                            self.player.swap_on_field(current_x,current_y,current_x,current_y-1)
+                        if options[option] == "Down":
+                            self.player.swap_on_field(current_x,current_y,current_x,current_y+1)
+                        finish_input = True
                 elif turn_command_list[int(choice)] == actions.Skip_turn:
                     finish_input = True                
                 elif turn_command_list[int(choice)] == actions.Recharge_3_MP:
